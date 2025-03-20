@@ -129,13 +129,13 @@ document = await document.redact(entities=["EMAIL_ADDRESS", "PHONE_NUMBER"]).ext
 ```python
 from doctran import ExtractProperty
 
-properties = ExtractProperty(
+properties = [ExtractProperty(
     name="millenial_or_boomer", 
     description="预测此文档是由千禧一代还是婴儿潮一代撰写的",
     type="string",
     enum=["millenial", "boomer"],
     required=True
-)
+)]
 document = await document.extract(properties=properties).execute()
 ```
 
