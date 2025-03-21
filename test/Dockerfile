@@ -6,7 +6,7 @@ RUN pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/we
 RUN pip install --no-cache-dir langchain-community pypdf pymilvus tqdm pillow
 RUN pip install --no-cache-dir langchain-docling openpyxl spacy ollama langchain-milvus
 RUN pip install --no-cache-dir dashscope matplotlib langchain-ollama langchain-text-splitters
-RUN pip install --no-cache-dir httpx huggingface-hub
+RUN pip install --no-cache-dir httpx huggingface-hub langchain-openai openai
 RUN pip install -U pydantic
 
 COPY ./zh_core_web_sm-3.8.0.tar.gz /tmp
