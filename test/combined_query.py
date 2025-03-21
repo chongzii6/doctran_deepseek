@@ -9,32 +9,101 @@ from langchain.text_splitter import SpacyTextSplitter
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
+import os, json
+from langchain_openai import ChatOpenAI
+from openai import OpenAI
 
-dashscope_api_key = "sk-fe19314cfe7d424d9c8ec7c52f3dcd88"
-agent_model = "qwen-max-latest"
-generating_model = "qwen2.5-72b-instruct"
+dashscope_api_key = os.getenv("DASHSCOPE_KEY")
+agent_model = os.getenv("AGENT_MODEL", default="qwen-max-latest")
+generating_model = os.getenv("GENERATING_MODEL", default="qwen2.5-72b-instruct")
 
-milvus_url = "192.168.8.2"
-collection_name = "milvus_bm25"
+milvus_url = os.getenv("MILVUS_URL", default="192.168.8.2")
+collection_name = os.getenv("MILVUS_COLLECTION", default="milvus_bm25")
+base_url = os.getenv("OPENAI_BASEURL", default="https://dashscope.aliyuncs.com/compatible-mode/v1")
+
+#
+extraction_prompt = ChatPromptTemplate.from_template(
+"""
+分析以下问题，提取问题的关键字，如果有多个，按询问的意图高低排序。
+<问题>
+{input}
+</问题>
+"""
+)
 
 class Classification(BaseModel):
-    keyword: List[str] = Field(description=u"查询的关键字, 按意图高低排序")
+    keyword: List[str] = Field(description=u"查询的关键字")
 
-def rag_by_keyword(user_query):
-    print("问题: ", user_query)
+def extra_keyword_openai(query) -> List[str]:
+    prompt = extraction_prompt.invoke({"input": query})
+    content = prompt.to_messages()[0].content
+    # print(content)
 
+    schema = Classification.model_json_schema()
+    func_schema = {
+        "name": "Classification",
+        "parameters": schema,
+    }
+
+    openai = OpenAI(base_url=base_url, api_key=dashscope_api_key)
+
+    # print(json.dumps(func_schema, indent=2))
+    response = openai.chat.completions.create(temperature=0, model=agent_model, 
+                messages=[{"role": "user", "content": content}],
+                tools=[{
+                    "type": "function",
+                    "function": func_schema,
+                    }
+                ],
+                # tool_choice={"type": "function", "function": {"name": schema["name"]}}
+    )
+
+    # print(response)
+
+    # 解析工具调用结果
+    try:
+        # 确保正确访问工具调用结果
+        tool_call = response.choices[0].message.tool_calls[0]
+        arguments = tool_call.function.arguments
+
+        try:
+            arguments_dict = json.loads(arguments)
+        except json.JSONDecodeError:
+            print("尝试修复 JSON 格式问题...")
+
+        # 如果 arguments_dict 为空，创建默认结构
+        if not arguments_dict:
+            arguments_dict = {"error": "模型返回了空的 JSON 结构"}
+
+        # print(tool_call)
+        # print(arguments_dict)
+        return arguments_dict['keyword']
+
+    except Exception as e:
+        raise Exception("无法解析模型返回的工具调用: " + str(e))    
+
+def extra_keyword_tongyi(query) -> List[str]:
     # LLM\n",
     llm = ChatTongyi(temperature=0.6, model=agent_model, api_key=dashscope_api_key, streaming=True).with_structured_output(
         Classification
     )
-
-# prompt = tagging_prompt.invoke({"input": query})
-# print(prompt)
-
     output = llm.invoke(user_query)
     print(output)
 
     if len(output.keyword) == 0:
+        print("无法识别查询关键字, 失败!")
+        return
+    
+    return output.keyword
+
+def rag_by_keyword(user_query):
+    print("问题: ", user_query)
+
+    # kws = extra_keyword_tongyi(user_query)
+    kws = extra_keyword_openai(user_query)
+    print(f'keywords={kws}')
+    
+    if len(kws) == 0:
         print("无法识别查询关键字, 失败!")
         return
 
@@ -43,9 +112,9 @@ def rag_by_keyword(user_query):
         uri=f"http://{milvus_url}:19530",
     )
 
-    keyword = output.keyword[0]
+    keyword = kws[0]
     filter = f"text like '%{keyword}%'"
-    print(f'filter={filter}')
+    # print(f'filter={filter}')
 
     matching_documents = []
     hybrid_search_res = mclient.query(
@@ -123,7 +192,9 @@ Provide a clear and direct response to the user's query, including inline citati
 """
 )
 
-    generatingLLM = ChatTongyi(temperature=0.6, model=generating_model, 
+    # generatingLLM = ChatTongyi(temperature=0.6, model=generating_model, 
+    #                         api_key=dashscope_api_key, streaming=True)
+    generatingLLM = ChatOpenAI(temperature=0.6, model=generating_model, base_url=base_url, 
                             api_key=dashscope_api_key, streaming=True)
 
     # Step 8: Create Chain
