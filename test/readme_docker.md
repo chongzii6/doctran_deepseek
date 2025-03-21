@@ -1,7 +1,6 @@
 # build image
 `docker build -t rag-demo-img:v1 .`
 
-# start a pod
 # 命令行参数：
 # DASHSCOPE_KEY
 # AGENT_MODEL       ="qwen-max-latest"
@@ -10,7 +9,8 @@
 # MILVUS_COLLECTION ="milvus_bm25"
 # OPENAI_BASEURL    ="https://dashscope.aliyuncs.com/compatible-mode/v1"
 
-`docker run -ti --rm --privileged rag-demo-img:v1 bash`
+# start a pod
+`docker run -ti --rm --privileged -e MILVUS_URL=172.1.8.1 rag-demo-img:v1 bash`
 
 # execute
 `python combined_query.py`
