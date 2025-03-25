@@ -17,20 +17,28 @@ search_params = {
     'params': {'drop_ratio_search': 0.2},
 }
 
-hybrid_search_res = milvusClient.search(
+# hybrid_search_res = milvusClient.search(
+#     collection_name=MILVUS_COLLECTION,
+#     data=[user_message],
+#     anns_field='sparse_bm25',
+#     limit=TOP_K,
+#     search_params=search_params,
+#     filter=filter,
+#     output_fields=["text", "metadata"],
+# )
+
+hybrid_search_res = milvusClient.query(
     collection_name=MILVUS_COLLECTION,
-    data=[user_message],
-    anns_field='sparse_bm25',
-    limit=TOP_K,
-    search_params=search_params,
     filter=filter,
     output_fields=["text", "metadata"],
 )
 
 print(f"hybrid_search_res={hybrid_search_res}")
 
+# for hits in hybrid_search_res:
+#     for hit in hits:
+#         print(f"hit={hit}")
+#         entity=hit['entity']
+#         print(f"text={entity['text']}\nmetadata={entity['metadata']}\n")
 for hits in hybrid_search_res:
-    for hit in hits:
-        print(f"hit={hit}")
-        entity=hit['entity']
-        print(f"text={entity['text']}\nmetadata={entity['metadata']}\n")
+    print(f"text={hits['text']}\nmetadata={hits['metadata']}\n")

@@ -50,7 +50,7 @@ base_url = os.getenv("OPENAI_BASEURL", default="https://dashscope.aliyuncs.com/c
 # """
 # )
 class Classification(BaseModel):
-    names: List[str] = Field(description=u"参会人名字")
+    names: List[str] = Field(description=u"名字")
     subject: str = Field(description=u"会议主题")
     time: str = Field(description=u"会议时间")
     publisher: str = Field(description=u"文档发布单位")
@@ -58,7 +58,7 @@ class Classification(BaseModel):
 
 extraction_prompt = ChatPromptTemplate.from_template(
 """
-分析以下文本，提取包含的所有参会人名字，会议主题，会议时间，文档发布单位，抄送。
+分析以下文本，提取包含的所有名字，会议主题，会议时间，文档发布单位，抄送。
 <文本>
 {input}
 </文本>
