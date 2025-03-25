@@ -102,7 +102,7 @@ def rag_by_keyword(user_query):
     # kws = extra_keyword_tongyi(user_query)
     kws = extra_keyword_openai(user_query)
     print(f'keywords={kws}')
-    
+
     if len(kws) == 0:
         print("无法识别查询关键字, 失败!")
         return
@@ -194,7 +194,7 @@ Provide a clear and direct response to the user's query, including inline citati
 
     # generatingLLM = ChatTongyi(temperature=0.6, model=generating_model, 
     #                         api_key=dashscope_api_key, streaming=True)
-    generatingLLM = ChatOpenAI(temperature=0.6, model=generating_model, base_url=base_url, 
+    generatingLLM = ChatOpenAI(temperature=1.2, model=generating_model, base_url=base_url, 
                             api_key=dashscope_api_key, streaming=True)
 
     # Step 8: Create Chain
