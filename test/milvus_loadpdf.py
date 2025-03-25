@@ -236,9 +236,44 @@ def upload_milvus(text_contents, metadatas):
 
     print(f"生成 {len(vectors)} 个向量，维度：{len(vectors[0])}")
 
+def _showhelp():
+    print('''%s [options] <folder_path>\nOption: \n\t-h --help: show help \n\t--key=<key>: openai access key
+\t--model=<model_id>: agent model to use to extract properties
+\t--ollama_url=<url>: ollama url for embedding
+\t--milvus_url=<url>: milvus url
+\t--openai_url=<url>: openai api compatible url
+\t--collection=<name>: milvus collection name\n
+folder_path: upload files in folder\n''' % os.path.basename(argv[0]))
+
 if __name__ == "__main__":
     path = u"D:\\dev\\AI\\files\\演示文件\\会议纪要"
-    all_splits = load_pdfs(path)
-    text_contents, metadatas = transform_docs(all_splits)
-    upload_milvus(text_contents, metadatas)
+
+    from sys import argv
+    import getopt
+
+    opts, args = getopt.getopt(argv[1:],'-h',['help','key=','model=','ollama_url=','milvus_url=','openai_url=','collection='])
+    for opt_name, opt_value in opts:
+        if opt_name in ('-h','--help'):
+            _showhelp()
+            exit()
+        if opt_name == '--key':
+            dashscope_api_key = opt_value
+        elif opt_name == '--model': 
+            agent_model = opt_value
+        elif opt_name == '--ollama_url': 
+            ollama_url = opt_value
+        elif opt_name == '--milvus_url': 
+            milvus_url = opt_value
+        elif opt_name == '--openai_url': 
+            base_url = opt_value
+        elif opt_name == '--collection': 
+            collection_name = opt_value
+    
+    if len(args) > 0:
+        path = args
+        all_splits = load_pdfs(path)
+        text_contents, metadatas = transform_docs(all_splits)
+        upload_milvus(text_contents, metadatas)
+    else:
+        _showhelp()
 
