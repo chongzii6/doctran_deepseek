@@ -50,6 +50,7 @@ base_url = os.getenv("OPENAI_BASEURL", default="https://dashscope.aliyuncs.com/c
 # """
 # )
 class Classification(BaseModel):
+    '''文本元信息'''
     names: List[str] = Field(description=u"名字")
     subject: str = Field(description=u"会议主题")
     time: str = Field(description=u"会议时间")
@@ -136,13 +137,17 @@ def load_pdfs(dir):
 def transform_docs(docs):
     schema = Classification.model_json_schema()
     func_schema = {
-        "name": "Classification",
+        "name": schema['title'],
+        "description": schema['description'],
         "parameters": schema,
     }
 
     openai_LLM = OpenAI(base_url=base_url, api_key=dashscope_api_key)
     text_contents = []
     metadatas = []
+
+    m = openai_LLM.models.list()
+    print(m)
 
     for doc in docs:
         text = doc.page_content
@@ -270,10 +275,14 @@ if __name__ == "__main__":
             collection_name = opt_value
     
     if len(args) > 0:
-        path = args
+        path = args[0]
+        print(f"path={path}, model={agent_model}, base_url={base_url}")
         all_splits = load_pdfs(path)
-        text_contents, metadatas = transform_docs(all_splits)
-        upload_milvus(text_contents, metadatas)
+        if len(all_splits) > 0:
+            text_contents, metadatas = transform_docs(all_splits)
+            upload_milvus(text_contents, metadatas)
+        else:
+            print(f"no document loaded, please check path: {os.path.abspath(path)}")
     else:
         _showhelp()
 

@@ -1,7 +1,7 @@
 """
-title: pipeline-rbac
+title: RBAC权限控制管道
 author: jun
-description: test pipeline rbac
+description: pipeline for rbac authorization
 version: 0.0.1
 licence: MIT
 requirements: pymilvus, openai, langchain_openai, langchain_core
